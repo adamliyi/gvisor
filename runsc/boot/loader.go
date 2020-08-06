@@ -32,6 +32,7 @@ import (
 	"gvisor.dev/gvisor/pkg/log"
 	"gvisor.dev/gvisor/pkg/memutil"
 	"gvisor.dev/gvisor/pkg/rand"
+	"gvisor.dev/gvisor/pkg/refs"
 	"gvisor.dev/gvisor/pkg/sentry/arch"
 	"gvisor.dev/gvisor/pkg/sentry/control"
 	"gvisor.dev/gvisor/pkg/sentry/fdimport"
@@ -1010,6 +1011,14 @@ func (l *Loader) WaitExit() kernel.ExitStatus {
 
 	// Cleanup
 	l.ctrl.stop()
+
+	// Manually run GC to enqueue refcount finalizers, which check for reference
+	// leaks. There is no way to guarantee that every finalizer will run before
+	// exiting, but this at least ensures that they will be discovered/enqueued by
+	// GC.
+	if refs.GetLeakMode() != refs.NoLeakChecking {
+		runtime.GC()
+	}
 
 	return l.k.GlobalInit().ExitStatus()
 }
