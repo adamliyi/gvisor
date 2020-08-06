@@ -1,8 +1,21 @@
-load("//tools:defs.bzl", "cc_library", "gtest")
+load("//tools:defs.bzl", "cc_library", "cc_test", "gtest")
 
 package(
     default_visibility = ["//:sandbox"],
     licenses = ["notice"],
+)
+
+cc_test(
+    name = "stat_test",
+    srcs = [
+        "fuse_base.h",
+        "stat_test.cc",
+    ],
+    deps = [
+        ":fuse_base",
+        "//test/util:test_main",
+        "//test/util:test_util",
+    ],
 )
 
 cc_library(
