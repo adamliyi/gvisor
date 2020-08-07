@@ -499,7 +499,7 @@ func (e *endpoint) write(p tcpip.Payloader, opts tcpip.WriteOptions) (int64, <-c
 		resolve = route.Resolve
 	}
 
-	if !e.broadcast && route.IsBroadcast() {
+	if !e.broadcast && route.IsRemoteBroadcast() {
 		return 0, nil, tcpip.ErrBroadcastDisabled
 	}
 

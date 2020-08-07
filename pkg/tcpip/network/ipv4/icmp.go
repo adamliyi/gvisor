@@ -96,6 +96,25 @@ func (e *endpoint) handleICMP(r *stack.Route, pkt *stack.PacketBuffer) {
 			NetworkHeader: append(buffer.View(nil), pkt.NetworkHeader...),
 		})
 
+		remoteLinkAddr := r.RemoteLinkAddress
+		localAddr := r.LocalAddress
+		if r.IsLocalBroadcast() || header.IsV4MulticastAddress(r.LocalAddress) {
+			localAddr = ""
+		}
+
+		r, err := r.Stack().FindRoute(e.NICID(), localAddr, r.RemoteAddress, ProtocolNumber, false /* multicastLoop */)
+		if err != nil {
+			// If we cannot find a route to the destination, silently drop the packet.
+			return
+		}
+		defer r.Release()
+
+		// Use the link address from the source of the original packet.
+		r.RemoteLinkAddress = remoteLinkAddr
+		if r.IsResolutionRequired() {
+			panic("resolution should not be required when the remote link address is already set")
+		}
+
 		vv := pkt.Data.Clone(nil)
 		vv.TrimFront(header.ICMPv4MinimumSize)
 		hdr := buffer.NewPrependable(int(r.MaxHeaderLength()) + header.ICMPv4MinimumSize)

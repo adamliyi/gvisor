@@ -279,10 +279,23 @@ func (r *Route) Stack() *Stack {
 	return r.ref.stack()
 }
 
-// IsBroadcast returns true if the route is to send a broadcast packet.
-func (r *Route) IsBroadcast() bool {
+// IsRemoteBroadcast returns true if the route is to send a broadcast packet.
+func (r *Route) IsRemoteBroadcast() bool {
 	// Only IPv4 has a notion of broadcast.
 	return r.directedBroadcast || r.RemoteAddress == header.IPv4Broadcast
+}
+
+// IsLocalBroadcast returns true if the route is for a received broadcast
+// packet.
+func (r *Route) IsLocalBroadcast() bool {
+	// Only IPv4 has a notion of broadcast.
+	if r.LocalAddress == header.IPv4Broadcast {
+		return true
+	}
+
+	addr := r.ref.addrWithPrefix()
+	subnet := addr.Subnet()
+	return subnet.IsBroadcast(r.LocalAddress)
 }
 
 // ReverseRoute returns new route with given source and destination address.
